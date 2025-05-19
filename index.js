@@ -13,6 +13,7 @@ app.use(cors());
 
 // Routes
 const userRoute = require("./routes/user");
+const storeRoute = require("./routes/store");
 
 // Connect to db
 // mongoose.connect(process.env.DB_URL)
@@ -48,6 +49,7 @@ app.get("/", function (req, res) {
 });
 
 app.use("/api/user", userRoute);
+app.use("/api/store", storeRoute);
 
 const PORT = process.env.PORT;
 

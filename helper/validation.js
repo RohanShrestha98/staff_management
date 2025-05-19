@@ -1,21 +1,11 @@
-const Joi = require('joi');
+const Joi = require("joi");
 
-const signUpSchema = Joi.object()
-    .keys({
-        name: Joi.string()
-            .min(3)
-            .max(40)
-            .required(),
-        email: Joi.string()
-            .min(3)
-            .max(50)
-            .required(),
-        password: Joi.string()
-            .min(3)
-            .max(12)
-            .required()
-    })
+const signUpSchema = Joi.object().keys({
+  name: Joi.string().min(3).max(40).required(),
+  email: Joi.string().min(3).max(50).required(),
+  password: Joi.string().min(3).max(18).required(),
+});
 
 module.exports = {
-    signUpSchema
-}
+  signUpSchema,
+};
