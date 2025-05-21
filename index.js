@@ -14,15 +14,7 @@ app.use(cors());
 // Routes
 const userRoute = require("./routes/user");
 const storeRoute = require("./routes/store");
-
-// Connect to db
-// mongoose.connect(process.env.DB_URL)
-//   .then(() => {
-//     console.log("DB connected..");
-//   })
-//   .catch((error) => {
-//     console.log("Error on db connection: ", error)
-//   })
+const userClockInRoute = require("./routes/userClockIn");
 
 const mysql = require("mysql2");
 
@@ -50,6 +42,7 @@ app.get("/", function (req, res) {
 
 app.use("/api/user", userRoute);
 app.use("/api/store", storeRoute);
+app.use("/api/clock-in", userClockInRoute);
 
 const PORT = process.env.PORT;
 

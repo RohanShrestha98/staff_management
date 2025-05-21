@@ -3,12 +3,18 @@ const { connection, createConnection } = require("../database");
 const jwt = require("jsonwebtoken");
 
 const signUp = async (req, res) => {
-  const { username, email, password } = req.body;
+  const { firstName, lastName, email, password, phoneNumber, address } =
+    req.body;
 
-  if (!username || !email || !password) {
-    return res
-      .status(400)
-      .json({ message: "username, email, and password are required" });
+  if (
+    !firstName ||
+    !lastName ||
+    !phoneNumber ||
+    !address ||
+    !email ||
+    !password
+  ) {
+    return res.status(400).json({ message: "All fields are required" });
   }
 
   try {
@@ -25,18 +31,20 @@ const signUp = async (req, res) => {
     }
 
     await connect.execute(
-      "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
-      [username, email, hashedPassword]
+      "INSERT INTO users (firstName, lastName, email, password, phoneNumber, address) VALUES (?, ?, ?, ?, ?, ?)",
+      [firstName, lastName, email, hashedPassword, phoneNumber, address]
     );
 
     await connect.end();
 
     return res
       .status(201)
-      .json({ success: true, message: "User created successfully" });
+      .json({ success: true, message: "Register successfull" });
   } catch (error) {
     console.error("Error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -53,6 +61,9 @@ const login = async (req, res) => {
       [email]
     );
     const userData = rows?.[0];
+    if (email !== userData?.email) {
+      res.status(400).send({ success: false, message: "Email not found" });
+    }
     const comparePassword = await bcrypt.compareSync(
       password,
       userData?.password
@@ -71,27 +82,33 @@ const login = async (req, res) => {
         { expiresIn: "3000s" }
       );
       res.status(200).json({
-        accessToken,
         success: true,
-        data,
+        data: { ...data, access: accessToken },
       });
+    } else {
+      res.status(500).send({ success: false, message: "Incorrect password" });
     }
   } catch (err) {
     console.error("Failed to login", err);
-    res.status(500).send("Failed to login");
+    res.status(500).send({
+      success: true,
+      messege: "Failed to login",
+    });
   }
 };
 
 const getUsers = async (req, res) => {
   try {
     const [rows] = await connection.query(
-      "SELECT id, username, email FROM users"
+      "SELECT id, firstName, lastName, staffId, email, phoneNumber, address, storeId, payPerHour, days, shift FROM users"
     );
-    console.log("rows", rows);
     res.status(200).json({ success: true, rows });
   } catch (err) {
     console.error("Error retrieving users:", err);
-    res.status(500).send("Error retrieving users");
+    res.status(500).send({
+      success: true,
+      messege: `Error retriving users`,
+    });
   }
 };
 
@@ -103,29 +120,65 @@ const deleteUser = async (req, res) => {
     const [result] = await connection.execute(query, [userId]);
 
     if (result.affectedRows === 0) {
-      return res.status(404).send("User not found");
+      return res
+        .status(404)
+        .send({ success: false, message: "User not found" });
     }
-
-    res.send(`User with ID ${userId} deleted successfully`);
+    res.status(200).send({
+      success: true,
+      messege: `User with ID ${userId} deleted successfully`,
+    });
   } catch (err) {
     console.error("Error deleting data:", err);
-    res.status(500).send("Error deleting user");
+    res.status(500).send({
+      success: true,
+      messege: `Error deleting user`,
+    });
   }
 };
 
 const updateUser = async (req, res) => {
   const userId = req.params.id;
-  const { username, email } = req.body;
-  const query = "UPDATE users SET username = ?, email = ? WHERE id = ?";
+  const {
+    firstName,
+    lastName,
+    staffId,
+    email,
+    phoneNumber,
+    address,
+    payPerHour,
+    shift,
+    days,
+    storeId,
+  } = req.body;
+  const query =
+    "UPDATE users SET firstName = ?, lastName = ?, staffId = ?, email = ?, phoneNumber = ?, address = ?, payPerHour = ?, shift = ?, days = ?, storeId = ?  WHERE id = ?";
 
   try {
-    const [result] = await connection.execute(query, [username, email, userId]);
-
+    const [rows] = await connection.execute(
+      "SELECT email, phoneNumber, staffId FROM users WHERE id = ?",
+      [userId]
+    );
+    const userData = rows?.[0];
+    const [result] = await connection.execute(query, [
+      firstName,
+      lastName,
+      staffId ?? userData?.staffId,
+      email ?? userData?.email,
+      phoneNumber ?? userData?.phoneNumber,
+      address,
+      payPerHour,
+      shift,
+      days,
+      storeId,
+      userId,
+    ]);
     if (result.affectedRows === 0) {
       return res.status(404).send("User not found");
     }
-
-    res.send(`User with ID ${userId} updated successfully`);
+    return res
+      .status(200)
+      .json({ success: true, message: "User updated successfully" });
   } catch (err) {
     console.error("Error updating data:", err);
     res.status(500).send("Error updating user");

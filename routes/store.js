@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const storeControler = require("../controllers/store");
 
+const createUserValidateToken = require("../middleware/createUserValidateToken");
+
+router.use(createUserValidateToken);
 router.get("/", storeControler.getStore);
 router.post("/create", storeControler.createStore);
 router.patch("/update/:id", storeControler.updateStore);

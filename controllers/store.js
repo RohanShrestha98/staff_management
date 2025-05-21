@@ -37,6 +37,7 @@ const createStore = async (req, res) => {
 };
 
 const getStore = async (req, res) => {
+  console.log("okey");
   try {
     const [rows] = await connection.query("SELECT * FROM store");
     res.status(200).json({ success: true, rows });
@@ -54,10 +55,15 @@ const deleteStore = async (req, res) => {
     const [result] = await connection.execute(query, [storeId]);
 
     if (result.affectedRows === 0) {
-      return res.status(404).send("Store not found");
+      return res.status(404).send({
+        success: false,
+        messege: `Store not found`,
+      });
     }
-
-    res.send(`Store with ID ${storeId} deleted successfully`);
+    res.status(200).send({
+      success: true,
+      messege: `Store with ID ${storeId} deleted successfully`,
+    });
   } catch (err) {
     console.error("Error deleting data:", err);
     res.status(500).send("Error deleting store");
@@ -71,12 +77,16 @@ const updateStore = async (req, res) => {
     "UPDATE store SET name = ?, address = ?, store_number = ?, open = ?, close = ? WHERE id = ?";
 
   try {
+    const [rows] = await connection.query("SELECT * FROM store WHERE id = ?", [
+      storeId,
+    ]);
+    const storeData = rows?.[0];
     const [result] = await connection.execute(query, [
-      name,
-      address,
-      store_number,
-      open,
-      close,
+      name ?? storeData?.name,
+      address ?? storeData?.address,
+      store_number ?? storeData?.store_number,
+      open ?? storeData?.open,
+      close ?? storeData?.close,
       storeId,
     ]);
 
@@ -84,7 +94,10 @@ const updateStore = async (req, res) => {
       return res.status(404).send("Store not found");
     }
 
-    res.send(`Store with ID ${storeId} updated successfully`);
+    res.status(200).send({
+      success: true,
+      messege: `${name ?? storeData?.name} store updated successfully`,
+    });
   } catch (err) {
     console.error("Error updating data:", err);
     res.status(500).send("Error updating store");
