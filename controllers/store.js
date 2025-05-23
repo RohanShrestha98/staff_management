@@ -1,12 +1,11 @@
 const { connection, createConnection } = require("../database");
+const { statusHandeler } = require("../helper/statusHandler");
 
 const createStore = async (req, res) => {
   const { name, address, store_number, open, close } = req.body;
 
   if (!name || !address || !store_number || !open || !close) {
-    return res.status(400).json({
-      message: "name, address, store_number, open, close are required",
-    });
+    return statusHandeler(res, 400, false, "All fields are required");
   }
 
   try {
@@ -17,7 +16,7 @@ const createStore = async (req, res) => {
       [store_number]
     );
     if (rows.length > 0) {
-      return res.status(400).json({ message: "Store number already exists" });
+      return statusHandeler(res, 400, false, "Store number already exists");
     }
 
     await connect.execute(
@@ -27,23 +26,20 @@ const createStore = async (req, res) => {
 
     await connect.end();
 
-    return res
-      .status(201)
-      .json({ success: true, message: "Store created successfully" });
+    return statusHandeler(res, 201, true, "Store created successfully");
   } catch (error) {
     console.error("Error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return statusHandeler(res, 500, false, "Internal Server error");
   }
 };
 
 const getStore = async (req, res) => {
-  console.log("okey");
   try {
     const [rows] = await connection.query("SELECT * FROM store");
-    res.status(200).json({ success: true, rows });
+    statusHandeler(res, 200, true, rows);
   } catch (err) {
     console.error("Error retrieving store:", err);
-    res.status(500).send("Error retrieving store");
+    statusHandeler(res, 500, false, "Error retrieving store");
   }
 };
 
@@ -60,13 +56,14 @@ const deleteStore = async (req, res) => {
         messege: `Store not found`,
       });
     }
-    res.status(200).send({
-      success: true,
-      messege: `Store with ID ${storeId} deleted successfully`,
-    });
+    statusHandeler(
+      res,
+      200,
+      true,
+      `Store with ID ${storeId} deleted successfully`
+    );
   } catch (err) {
-    console.error("Error deleting data:", err);
-    res.status(500).send("Error deleting store");
+    statusHandeler(res, 500, false, "Error deleting Store");
   }
 };
 
@@ -91,16 +88,17 @@ const updateStore = async (req, res) => {
     ]);
 
     if (result.affectedRows === 0) {
-      return res.status(404).send("Store not found");
+      return statusHandeler(res, 404, false, "Store not found");
     }
 
-    res.status(200).send({
-      success: true,
-      messege: `${name ?? storeData?.name} store updated successfully`,
-    });
+    statusHandeler(
+      res,
+      200,
+      true,
+      `${name ?? storeData?.name} store updated successfully`
+    );
   } catch (err) {
-    console.error("Error updating data:", err);
-    res.status(500).send("Error updating store");
+    statusHandeler(res, 500, false, "Error updating store");
   }
 };
 
